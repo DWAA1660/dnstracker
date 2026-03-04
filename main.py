@@ -20,7 +20,7 @@ def run_dns_server(bind, port):
     except KeyboardInterrupt:
         print("\n[*] Stopping DNS Server...", flush=True)
         if 'proxy' in locals():
-            proxy.stop(), flush=True
+            proxy.stop()
 
 def run_web_app(host, port):
     print(f"[*] Starting Web Dashboard on http://{host}:{port}")
