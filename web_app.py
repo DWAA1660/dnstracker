@@ -18,7 +18,16 @@ def get_stats():
 @app.route('/api/queries/recent')
 def get_recent_queries():
     limit = request.args.get('limit', default=50, type=int)
-    queries = db_manager.get_recent_queries(limit=limit)
+    client_ip = request.args.get('client_ip', default=None, type=str)
+    search_term = request.args.get('search', default=None, type=str)
+    timeframe = request.args.get('timeframe_minutes', default=None, type=int)
+    
+    queries = db_manager.get_recent_queries(
+        limit=limit,
+        client_ip=client_ip,
+        search_term=search_term,
+        timeframe_minutes=timeframe
+    )
     return jsonify(queries)
 
 @app.route('/api/devices')
@@ -34,6 +43,29 @@ def update_device(ip):
     
     db_manager.update_device_name(ip, data['name'])
     return jsonify({'success': True, 'message': 'Device updated'})
+
+@app.route('/api/blocked-domains', methods=['GET'])
+def get_blocked_domains():
+    domains = db_manager.get_blocked_domains()
+    return jsonify(domains)
+
+@app.route('/api/blocked-domains', methods=['POST'])
+def add_blocked_domain():
+    data = request.json
+    if not data or 'domain' not in data:
+        return jsonify({'error': 'Domain is required'}), 400
+    
+    db_manager.add_blocked_domain(data['domain'])
+    return jsonify({'success': True, 'message': 'Domain blocked'})
+
+@app.route('/api/blocked-domains', methods=['DELETE'])
+def remove_blocked_domain():
+    data = request.json
+    if not data or 'domain' not in data:
+        return jsonify({'error': 'Domain is required'}), 400
+    
+    db_manager.remove_blocked_domain(data['domain'])
+    return jsonify({'success': True, 'message': 'Domain unblocked'})
 
 if __name__ == '__main__':
     db_manager.init_db()

@@ -164,6 +164,20 @@ class DNSProxy(threading.Thread):
             qname = str(request.q.qname)
             qtype = QTYPE[request.q.qtype]
             
+            # Check if domain is blocked
+            if db_manager.check_blocked_domain(qname):
+                # Create a blocked response (NXDOMAIN)
+                reply = request.reply()
+                reply.header.rcode = RCODE.NXDOMAIN
+                
+                end_time = time.time()
+                response_time_ms = (end_time - start_time) * 1000
+                
+                # Log to database
+                db_manager.log_query(client_ip, qname, qtype, response_time_ms, 'BLOCKED')
+                
+                return reply.pack()
+
             # Forward to upstream (using UDP always for simplicity)
             # Note: For robust production usage, we might want to support TCP upstream too
             self.upstream_sock.sendto(data, (UPSTREAM_DNS, UPSTREAM_PORT))

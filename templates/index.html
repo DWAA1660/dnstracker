@@ -39,6 +39,10 @@
                     <i data-lucide="monitor-smartphone"></i>
                     <span>Devices</span>
                 </a>
+                <a href="#blocked-domains" class="flex items-center gap-3 p-3 hover:bg-slate-800 rounded-lg transition-colors">
+                    <i data-lucide="shield-alert"></i>
+                    <span>Blocked Domains</span>
+                </a>
             </nav>
         </aside>
 
@@ -149,6 +153,10 @@
                     <div id="queries" class="bg-white p-6 rounded-xl shadow-sm border border-gray-100">
                         <div class="flex justify-between items-center mb-4">
                             <h3 class="text-lg font-bold text-gray-800">Recent Queries</h3>
+                            <div class="relative">
+                                <input type="text" id="query-search" placeholder="Search domains..." onkeyup="debounce(fetchData, 500)()" class="pl-9 pr-4 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 w-64">
+                                <i data-lucide="search" class="absolute left-3 top-2.5 w-4 h-4 text-gray-400"></i>
+                            </div>
                         </div>
                         <div class="overflow-x-auto">
                             <table class="w-full text-left border-collapse">
@@ -189,12 +197,39 @@
                     </div>
                 </div>
 
+                <!-- Blocked Domains Configuration -->
+                <div id="blocked-domains" class="bg-white p-6 rounded-xl shadow-sm border border-gray-100 mt-8 mb-8">
+                    <div class="flex justify-between items-center mb-4">
+                        <h3 class="text-lg font-bold text-gray-800">Blocked Domains</h3>
+                        <div class="flex gap-2">
+                            <input type="text" id="new-blocked-domain" placeholder="example.com" class="border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-red-500">
+                            <button onclick="addBlockedDomain()" class="bg-red-600 hover:bg-red-700 text-white px-4 py-2 rounded-lg flex items-center gap-2 transition-colors text-sm">
+                                <i data-lucide="plus-circle" class="w-4 h-4"></i> Block
+                            </button>
+                        </div>
+                    </div>
+                    <div class="overflow-x-auto">
+                        <table class="w-full text-left border-collapse">
+                            <thead>
+                                <tr class="text-gray-500 text-sm border-b">
+                                    <th class="pb-3 font-medium">Domain</th>
+                                    <th class="pb-3 font-medium">Date Added</th>
+                                    <th class="pb-3 font-medium text-right">Actions</th>
+                                </tr>
+                            </thead>
+                            <tbody id="blocked-domains-table" class="text-sm">
+                                <!-- Dynamic content -->
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+
             </div>
         </main>
     </div>
 
-    <!-- Modals -->
-    <div id="deviceModal" class="hidden fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center">
+    <!-- Rename Device Modal -->
+    <div id="deviceModal" class="hidden fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
         <div class="bg-white rounded-xl shadow-lg w-96 p-6">
             <h3 class="text-lg font-bold mb-4">Rename Device</h3>
             <input type="hidden" id="edit-device-ip">
@@ -209,7 +244,60 @@
         </div>
     </div>
 
+    <!-- Device Details Modal -->
+    <div id="deviceDetailsModal" class="hidden fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+        <div class="bg-white rounded-xl shadow-lg w-3/4 max-w-4xl h-[80vh] flex flex-col">
+            <div class="p-6 border-b border-gray-100 flex justify-between items-center">
+                <div>
+                    <h3 class="text-xl font-bold text-gray-800" id="detail-device-name">Device Details</h3>
+                    <p class="text-sm text-gray-500" id="detail-device-ip">IP: -</p>
+                </div>
+                <button onclick="closeDeviceDetailsModal()" class="text-gray-400 hover:text-gray-600">
+                    <i data-lucide="x" class="w-6 h-6"></i>
+                </button>
+            </div>
+            
+            <div class="p-4 border-b border-gray-100 flex gap-4 bg-gray-50">
+                 <div class="relative flex-1">
+                    <input type="text" id="detail-search" placeholder="Search device queries..." onkeyup="debounce(fetchDeviceQueries, 500)()" class="w-full pl-9 pr-4 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500">
+                    <i data-lucide="search" class="absolute left-3 top-2.5 w-4 h-4 text-gray-400"></i>
+                </div>
+                <select id="detail-timeframe" onchange="fetchDeviceQueries()" class="bg-white border border-gray-300 rounded-lg px-4 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500">
+                    <option value="60" selected>Last Hour</option>
+                    <option value="1440">Last 24 Hours</option>
+                    <option value="10080">Last 7 Days</option>
+                </select>
+            </div>
+
+            <div class="flex-1 overflow-y-auto p-6">
+                <table class="w-full text-left border-collapse">
+                    <thead class="sticky top-0 bg-white">
+                        <tr class="text-gray-500 text-sm border-b">
+                            <th class="pb-3 font-medium">Time</th>
+                            <th class="pb-3 font-medium">Domain</th>
+                            <th class="pb-3 font-medium">Type</th>
+                            <th class="pb-3 font-medium">Status</th>
+                        </tr>
+                    </thead>
+                    <tbody id="detail-queries-table" class="text-sm">
+                        <!-- Content -->
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+
     <script>
+        // Debounce function for search
+        function debounce(func, wait) {
+            let timeout;
+            return function(...args) {
+                const context = this;
+                clearTimeout(timeout);
+                timeout = setTimeout(() => func.apply(context, args), wait);
+            };
+        }
+
         // Initialize Lucide icons
         lucide.createIcons();
 
@@ -220,6 +308,7 @@
         // Fetch all data
         async function fetchData() {
             const timeframe = document.getElementById('timeframe').value;
+            const searchTerm = document.getElementById('query-search').value;
             
             try {
                 // Fetch stats
@@ -227,30 +316,39 @@
                 const stats = await statsResponse.json();
                 
                 // Fetch recent queries
-                const queriesResponse = await fetch('/api/queries/recent?limit=10');
+                let queriesUrl = `/api/queries/recent?limit=50`;
+                if (searchTerm) {
+                    queriesUrl += `&search=${encodeURIComponent(searchTerm)}`;
+                }
+                const queriesResponse = await fetch(queriesUrl);
                 const queries = await queriesResponse.json();
                 
                 // Fetch devices
                 const devicesResponse = await fetch('/api/devices');
                 const devices = await devicesResponse.json();
 
-                updateDashboard(stats, queries, devices);
+                // Fetch blocked domains
+                const blockedResponse = await fetch('/api/blocked-domains');
+                const blockedDomains = await blockedResponse.json();
+
+                updateDashboard(stats, queries, devices, blockedDomains);
             } catch (error) {
                 console.error("Error fetching data:", error);
             }
         }
 
-        function updateDashboard(stats, queries, devices) {
+        function updateDashboard(stats, queries, devices, blockedDomains) {
             // Update summary cards
             document.getElementById('total-queries').innerText = stats.total_queries.toLocaleString();
             document.getElementById('active-devices').innerText = devices.length;
+            document.getElementById('blocked-domains-count').innerText = stats.blocked_count.toLocaleString();
 
             // Update Top Clients Table
             const clientsTable = document.getElementById('top-clients-table');
             clientsTable.innerHTML = '';
             stats.top_clients.forEach(client => {
                 clientsTable.innerHTML += `
-                    <tr class="border-b border-gray-50 last:border-0">
+                    <tr class="border-b border-gray-50 last:border-0 hover:bg-gray-50 cursor-pointer" onclick="openDeviceDetailsModal('${client.client_ip}', '${client.name}')">
                         <td class="py-3">
                             <div class="font-medium text-gray-900">${client.name}</div>
                             <div class="text-xs text-gray-500">${client.client_ip}</div>
@@ -263,20 +361,25 @@
             // Update Recent Queries Table
             const queriesTable = document.getElementById('recent-queries-table');
             queriesTable.innerHTML = '';
-            queries.forEach(query => {
-                const statusColor = query.status === 'NOERROR' ? 'text-green-600 bg-green-50' : 'text-red-600 bg-red-50';
-                queriesTable.innerHTML += `
-                    <tr class="border-b border-gray-50 last:border-0">
-                        <td class="py-3 text-gray-500">${new Date(query.timestamp).toLocaleTimeString()}</td>
-                        <td class="py-3 text-gray-900">${query.client_name}</td>
-                        <td class="py-3 text-gray-900 font-medium truncate max-w-[200px]" title="${query.domain}">${query.domain}</td>
-                        <td class="py-3 text-gray-500">${query.record_type}</td>
-                        <td class="py-3">
-                            <span class="px-2 py-1 rounded text-xs font-medium ${statusColor}">${query.status}</span>
-                        </td>
-                    </tr>
-                `;
-            });
+            if (queries.length === 0) {
+                 queriesTable.innerHTML = '<tr><td colspan="5" class="text-center py-4 text-gray-500">No queries found</td></tr>';
+            } else {
+                queries.forEach(query => {
+                    const statusColor = query.status === 'NOERROR' ? 'text-green-600 bg-green-50' : 
+                                      query.status === 'BLOCKED' ? 'text-red-600 bg-red-50' : 'text-gray-600 bg-gray-50';
+                    queriesTable.innerHTML += `
+                        <tr class="border-b border-gray-50 last:border-0">
+                            <td class="py-3 text-gray-500">${new Date(query.timestamp).toLocaleTimeString()}</td>
+                            <td class="py-3 text-gray-900">${query.client_name}</td>
+                            <td class="py-3 text-gray-900 font-medium truncate max-w-[200px]" title="${query.domain}">${query.domain}</td>
+                            <td class="py-3 text-gray-500">${query.record_type}</td>
+                            <td class="py-3">
+                                <span class="px-2 py-1 rounded text-xs font-medium ${statusColor}">${query.status}</span>
+                            </td>
+                        </tr>
+                    `;
+                });
+            }
 
             // Update Devices Table
             const devicesTable = document.getElementById('devices-table');
@@ -284,22 +387,147 @@
             devices.forEach(device => {
                 devicesTable.innerHTML += `
                     <tr class="border-b border-gray-50 last:border-0 hover:bg-gray-50">
-                        <td class="py-3 text-gray-500">${device.ip}</td>
-                        <td class="py-3 font-medium text-gray-900">${device.name}</td>
+                        <td class="py-3 text-gray-500 cursor-pointer" onclick="openDeviceDetailsModal('${device.ip}', '${device.name}')">${device.ip}</td>
+                        <td class="py-3 font-medium text-gray-900 cursor-pointer" onclick="openDeviceDetailsModal('${device.ip}', '${device.name}')">${device.name}</td>
                         <td class="py-3 text-gray-500">${new Date(device.last_seen).toLocaleString()}</td>
-                        <td class="py-3 text-right">
-                            <button onclick="openDeviceModal('${device.ip}', '${device.name}')" class="p-2 text-blue-600 hover:bg-blue-50 rounded-lg transition-colors">
+                        <td class="py-3 text-right flex justify-end gap-2">
+                            <button onclick="openDeviceDetailsModal('${device.ip}', '${device.name}')" class="p-2 text-green-600 hover:bg-green-50 rounded-lg transition-colors" title="View Logs">
+                                <i data-lucide="file-text" class="w-4 h-4"></i>
+                            </button>
+                            <button onclick="openDeviceModal('${device.ip}', '${device.name}')" class="p-2 text-blue-600 hover:bg-blue-50 rounded-lg transition-colors" title="Rename">
                                 <i data-lucide="edit-2" class="w-4 h-4"></i>
                             </button>
                         </td>
                     </tr>
                 `;
             });
+
+            // Update Blocked Domains Table
+            const blockedTable = document.getElementById('blocked-domains-table');
+            blockedTable.innerHTML = '';
+            blockedDomains.forEach(item => {
+                blockedTable.innerHTML += `
+                    <tr class="border-b border-gray-50 last:border-0 hover:bg-gray-50">
+                        <td class="py-3 font-medium text-gray-900">${item.domain}</td>
+                        <td class="py-3 text-gray-500">${new Date(item.added_at).toLocaleString()}</td>
+                        <td class="py-3 text-right">
+                            <button onclick="removeBlockedDomain('${item.domain}')" class="p-2 text-red-600 hover:bg-red-50 rounded-lg transition-colors">
+                                <i data-lucide="trash-2" class="w-4 h-4"></i>
+                            </button>
+                        </td>
+                    </tr>
+                `;
+            });
+
             lucide.createIcons(); // Re-initialize icons for new DOM elements
 
             // Update Charts
             updateTimeSeriesChart(stats.time_series);
             updateTopDomainsChart(stats.top_domains);
+        }
+
+        // Device Details Logic
+        let currentDeviceIp = null;
+
+        function openDeviceDetailsModal(ip, name) {
+            currentDeviceIp = ip;
+            document.getElementById('detail-device-name').innerText = name;
+            document.getElementById('detail-device-ip').innerText = ip;
+            document.getElementById('deviceDetailsModal').classList.remove('hidden');
+            
+            // Reset filters
+            document.getElementById('detail-search').value = '';
+            document.getElementById('detail-timeframe').value = '60'; // Default to last hour
+            
+            fetchDeviceQueries();
+        }
+
+        function closeDeviceDetailsModal() {
+             document.getElementById('deviceDetailsModal').classList.add('hidden');
+             currentDeviceIp = null;
+        }
+
+        async function fetchDeviceQueries() {
+            if (!currentDeviceIp) return;
+            
+            const search = document.getElementById('detail-search').value;
+            const timeframe = document.getElementById('detail-timeframe').value;
+            
+            // Use a higher limit (1000) to ensure we see "all" queries in the timeframe
+            let url = `/api/queries/recent?limit=1000&client_ip=${currentDeviceIp}&timeframe_minutes=${timeframe}`;
+            if (search) {
+                url += `&search=${encodeURIComponent(search)}`;
+            }
+            
+            try {
+                const response = await fetch(url);
+                const queries = await response.json();
+                
+                const tbody = document.getElementById('detail-queries-table');
+                tbody.innerHTML = '';
+                
+                if (queries.length === 0) {
+                    tbody.innerHTML = '<tr><td colspan="4" class="text-center py-4 text-gray-500">No queries found</td></tr>';
+                    return;
+                }
+
+                queries.forEach(query => {
+                    const statusColor = query.status === 'NOERROR' ? 'text-green-600 bg-green-50' : 
+                                      query.status === 'BLOCKED' ? 'text-red-600 bg-red-50' : 'text-gray-600 bg-gray-50';
+                    tbody.innerHTML += `
+                        <tr class="border-b border-gray-50 last:border-0">
+                            <td class="py-3 text-gray-500">${new Date(query.timestamp).toLocaleTimeString()}</td>
+                            <td class="py-3 text-gray-900 font-medium truncate max-w-[200px]" title="${query.domain}">${query.domain}</td>
+                            <td class="py-3 text-gray-500">${query.record_type}</td>
+                            <td class="py-3">
+                                <span class="px-2 py-1 rounded text-xs font-medium ${statusColor}">${query.status}</span>
+                            </td>
+                        </tr>
+                    `;
+                });
+            } catch (error) {
+                console.error("Error fetching device queries:", error);
+            }
+        }
+
+        async function addBlockedDomain() {
+            const input = document.getElementById('new-blocked-domain');
+            const domain = input.value.trim();
+            
+            if (!domain) return;
+            
+            try {
+                const response = await fetch('/api/blocked-domains', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ domain })
+                });
+                
+                if (response.ok) {
+                    input.value = '';
+                    fetchData(); // Refresh data
+                }
+            } catch (error) {
+                console.error("Error adding blocked domain:", error);
+            }
+        }
+
+        async function removeBlockedDomain(domain) {
+            if (!confirm(`Are you sure you want to unblock ${domain}?`)) return;
+            
+            try {
+                const response = await fetch('/api/blocked-domains', {
+                    method: 'DELETE',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ domain })
+                });
+                
+                if (response.ok) {
+                    fetchData(); // Refresh data
+                }
+            } catch (error) {
+                console.error("Error removing blocked domain:", error);
+            }
         }
 
         function updateTimeSeriesChart(data) {

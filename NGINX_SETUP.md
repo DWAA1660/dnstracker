@@ -67,7 +67,7 @@ Run the tracker with the SSL arguments. This will bind:
 *   **TCP/4000**: Web Dashboard (Localhost only recommended if using Nginx)
 
 ```bash
-sudo python3 main.py \
+python3 main.py \
   --dns-bind 170.205.30.132 \
   --web-bind 127.0.0.1 \
   --ssl-cert /etc/letsencrypt/live/privatedns.lunes.host/fullchain.pem \
