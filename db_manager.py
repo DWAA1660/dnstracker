@@ -78,46 +78,63 @@ def log_query(client_ip, domain, record_type, response_time_ms, status):
         finally:
             conn.close()
 
-def get_stats(timeframe_hours=24):
+def get_stats(timeframe_hours=24, client_ip=None):
     with _lock:
         conn = get_connection()
         try:
             cutoff = (datetime.datetime.now(datetime.timezone.utc) - datetime.timedelta(hours=timeframe_hours)).strftime('%Y-%m-%d %H:%M:%S')
             
+            # Base WHERE clause
+            where_clause = 'timestamp >= ?'
+            params = [cutoff]
+            
+            if client_ip:
+                where_clause += ' AND client_ip = ?'
+                params.append(client_ip)
+            
             # Total queries
-            total_queries = conn.execute('SELECT COUNT(*) FROM queries WHERE timestamp >= ?', (cutoff,)).fetchone()[0]
+            total_queries = conn.execute(f'SELECT COUNT(*) FROM queries WHERE {where_clause}', params).fetchone()[0]
             
             # Top domains
-            top_domains = conn.execute('''
+            top_domains = conn.execute(f'''
                 SELECT domain, COUNT(*) as count 
                 FROM queries 
-                WHERE timestamp >= ? 
+                WHERE {where_clause}
                 GROUP BY domain 
                 ORDER BY count DESC 
                 LIMIT 10
-            ''', (cutoff,)).fetchall()
+            ''', params).fetchall()
             
-            # Top clients
-            top_clients = conn.execute('''
+            # Top clients (only relevant if not filtering by single client, but let's keep logic consistent)
+            # If filtering by client, this will just return that one client.
+            # We need to handle the join for name resolution in the query construction if we want to filter on client_ip from queries table
+            
+            client_where = 'q.timestamp >= ?'
+            client_params = [cutoff]
+            if client_ip:
+                client_where += ' AND q.client_ip = ?'
+                client_params.append(client_ip)
+
+            top_clients = conn.execute(f'''
                 SELECT q.client_ip, COALESCE(d.name, q.client_ip) as name, COUNT(*) as count 
                 FROM queries q
                 LEFT JOIN devices d ON q.client_ip = d.ip
-                WHERE q.timestamp >= ? 
+                WHERE {client_where}
                 GROUP BY q.client_ip 
                 ORDER BY count DESC 
                 LIMIT 10
-            ''', (cutoff,)).fetchall()
+            ''', client_params).fetchall()
             
             # Queries over time (hourly)
-            time_series = conn.execute('''
+            time_series = conn.execute(f'''
                 SELECT strftime('%Y-%m-%d %H:00:00', timestamp) as hour, COUNT(*) as count
                 FROM queries
-                WHERE timestamp >= ?
+                WHERE {where_clause}
                 GROUP BY hour
                 ORDER BY hour ASC
-            ''', (cutoff,)).fetchall()
+            ''', params).fetchall()
             
-            # Blocked domains count
+            # Blocked domains count (global, doesn't change per client)
             blocked_count = conn.execute('SELECT COUNT(*) FROM blocked_domains').fetchone()[0]
             
             return {

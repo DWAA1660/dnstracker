@@ -12,7 +12,13 @@ def index():
 @app.route('/api/stats')
 def get_stats():
     timeframe = request.args.get('timeframe', default=24, type=int)
-    stats = db_manager.get_stats(timeframe_hours=timeframe)
+    client_ip = request.args.get('client_ip', default=None, type=str)
+    
+    # Handle 'all' case from frontend
+    if client_ip == 'all':
+        client_ip = None
+        
+    stats = db_manager.get_stats(timeframe_hours=timeframe, client_ip=client_ip)
     return jsonify(stats)
 
 @app.route('/api/queries/recent')
