@@ -46,12 +46,12 @@ python main.py
 You can customize the ports and bind addresses if you don't want to use the defaults:
 
 ```bash
-python main.py --dns-port 5353 --web-port 3000
+python main.py --dns-port 5353 --web-port 4000
 ```
 
 - `--dns-port`: Port for the DNS server to listen on (default: 53)
 - `--dns-bind`: IP for the DNS server to bind to (default: 0.0.0.0)
-- `--web-port`: Port for the Web Dashboard (default: 3000)
+- `--web-port`: Port for the Web Dashboard (default: 4000)
 - `--web-bind`: IP for the Web Dashboard to bind to (default: 0.0.0.0)
 
 ## Accessing the Dashboard
@@ -59,7 +59,7 @@ python main.py --dns-port 5353 --web-port 3000
 Once the server is running, open your web browser and navigate to:
 
 ```
-http://localhost:3000
+http://localhost:4000
 ```
 *(Or replace `localhost` with the IP address of the machine running the tracker)*
 

@@ -28,7 +28,7 @@ if __name__ == '__main__':
     parser = argparse.ArgumentParser(description='DNS Tracker')
     parser.add_argument('--dns-port', type=int, default=53, help='Port for the DNS server to listen on (default: 53)')
     parser.add_argument('--dns-bind', type=str, default='0.0.0.0', help='IP for the DNS server to bind to (default: 0.0.0.0)')
-    parser.add_argument('--web-port', type=int, default=3000, help='Port for the Web Dashboard (default: 3000)')
+    parser.add_argument('--web-port', type=int, default=4000, help='Port for the Web Dashboard (default: 4000)')
     parser.add_argument('--web-bind', type=str, default='0.0.0.0', help='IP for the Web Dashboard to bind to (default: 0.0.0.0)')
     
     args = parser.parse_args()

@@ -37,4 +37,4 @@ def update_device(ip):
 
 if __name__ == '__main__':
     db_manager.init_db()
-    app.run(host='0.0.0.0', port=3000, debug=True)
+    app.run(host='0.0.0.0', port=4000, debug=True)
