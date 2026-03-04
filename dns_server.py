@@ -5,7 +5,7 @@ import threading
 import time
 import struct
 import ssl
-from dnslib import DNSRecord, QTYPE
+from dnslib import DNSRecord, QTYPE, RCODE
 
 import db_manager
 

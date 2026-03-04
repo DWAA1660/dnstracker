@@ -316,7 +316,7 @@
                 const stats = await statsResponse.json();
                 
                 // Fetch recent queries
-                let queriesUrl = `/api/queries/recent?limit=50`;
+                let queriesUrl = `/api/queries/recent?limit=20`;
                 if (searchTerm) {
                     queriesUrl += `&search=${encodeURIComponent(searchTerm)}`;
                 }
