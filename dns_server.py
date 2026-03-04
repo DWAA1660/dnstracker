@@ -5,7 +5,7 @@ import threading
 import time
 import struct
 import ssl
-from dnslib import DNSRecord, QTYPE, RCODE
+from dnslib import DNSRecord, QTYPE, RCODE, DNSError
 
 import db_manager
 
@@ -98,7 +98,11 @@ class DNSProxy(threading.Thread):
                 threading.Thread(target=handler, args=(client_sock, addr)).start()
             except Exception as e:
                 if self.running:
-                    print(f"Error accepting {name} connection: {e}")
+                    # Suppress connection reset errors
+                    if isinstance(e, (ConnectionResetError, BrokenPipeError)) or (isinstance(e, OSError) and e.errno in (104, 10054)):
+                        pass
+                    else:
+                        print(f"Error accepting {name} connection: {e}")
 
     def listen_dot(self):
         while self.running:
@@ -113,7 +117,11 @@ class DNSProxy(threading.Thread):
                     client_sock.close()
             except Exception as e:
                 if self.running:
-                    print(f"Error accepting DoT connection: {e}")
+                    # Suppress connection reset errors (104=Connection reset by peer, 10054=Windows equivalent)
+                    if isinstance(e, (ConnectionResetError, BrokenPipeError)) or (isinstance(e, OSError) and e.errno in (104, 10054)):
+                        pass
+                    else:
+                        print(f"Error accepting DoT connection: {e}")
 
     def handle_tcp_client(self, conn, addr):
         client_ip = addr[0]
@@ -132,6 +140,10 @@ class DNSProxy(threading.Thread):
                     break
                 data += chunk
             
+            if len(data) < length:
+                # print(f"Incomplete DNS message from {client_ip}: expected {length} bytes, got {len(data)}")
+                return
+
             # Process request
             response_data = self.process_query(data, client_ip)
             
@@ -195,6 +207,10 @@ class DNSProxy(threading.Thread):
             db_manager.log_query(client_ip, qname, qtype, response_time_ms, status)
             
             return response_data
+            
+        except (DNSError, IndexError) as e:
+            print(f"Malformed DNS query from {client_ip}: {e}")
+            return None
             
         except Exception as e:
             print(f"Error handling query from {client_ip}: {e}")
