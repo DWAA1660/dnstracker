@@ -46,13 +46,18 @@ python main.py
 You can customize the ports and bind addresses if you don't want to use the defaults:
 
 ```bash
-python main.py --dns-port 5353 --web-port 4000
+# Bind both DNS and Web to a specific public IP
+python main.py --host 170.205.30.132
+
+# Bind to different IPs/ports individually
+python main.py --dns-port 5353 --web-port 4000 --host 0.0.0.0
 ```
 
-- `--dns-port`: Port for the DNS server to listen on (default: 53)
-- `--dns-bind`: IP for the DNS server to bind to (default: 0.0.0.0)
-- `--web-port`: Port for the Web Dashboard (default: 4000)
-- `--web-bind`: IP for the Web Dashboard to bind to (default: 0.0.0.0)
+- `--host`: Global bind IP for both DNS and Web (default: 0.0.0.0).
+- `--dns-port`: Port for the DNS server to listen on (default: 53).
+- `--dns-bind`: IP for the DNS server to bind to (overrides --host).
+- `--web-port`: Port for the Web Dashboard (default: 4000).
+- `--web-bind`: IP for the Web Dashboard to bind to (overrides --host).
 
 ## Accessing the Dashboard
 

@@ -28,6 +28,11 @@ class DNSProxy(threading.Thread):
             print(f"[!] Failed to bind to {self.bind}:{self.port}. Error: {e}", flush=True)
             if self.port < 1024:
                 print("[!] Privileged ports (below 1024) require root/admin privileges.", flush=True)
+            if "Address already in use" in str(e) or "[Errno 98]" in str(e):
+                print("[!] Port 53 is likely occupied by systemd-resolved or another DNS service.", flush=True)
+                print("[!] Try stopping systemd-resolved: 'sudo systemctl stop systemd-resolved'", flush=True)
+                print("[!] Or disable it permanently: 'sudo systemctl disable systemd-resolved' and 'sudo systemctl stop systemd-resolved'", flush=True)
+                print("[!] Alternatively, run on a different port using --dns-port 5353", flush=True)
             raise e
         
         # Upstream socket

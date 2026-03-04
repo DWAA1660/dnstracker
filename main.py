@@ -29,20 +29,25 @@ def run_web_app(host, port):
 
 if __name__ == '__main__':
     parser = argparse.ArgumentParser(description='DNS Tracker')
+    parser.add_argument('--host', type=str, default='0.0.0.0', help='Global bind IP for both DNS and Web (default: 0.0.0.0)')
     parser.add_argument('--dns-port', type=int, default=53, help='Port for the DNS server to listen on (default: 53)')
-    parser.add_argument('--dns-bind', type=str, default='0.0.0.0', help='IP for the DNS server to bind to (default: 0.0.0.0)')
+    parser.add_argument('--dns-bind', type=str, default=None, help='IP for the DNS server to bind to (overrides --host)')
     parser.add_argument('--web-port', type=int, default=4000, help='Port for the Web Dashboard (default: 4000)')
-    parser.add_argument('--web-bind', type=str, default='0.0.0.0', help='IP for the Web Dashboard to bind to (default: 0.0.0.0)')
+    parser.add_argument('--web-bind', type=str, default=None, help='IP for the Web Dashboard to bind to (overrides --host)')
     
     args = parser.parse_args()
 
+    # Determine bind addresses
+    dns_bind_ip = args.dns_bind if args.dns_bind else args.host
+    web_bind_ip = args.web_bind if args.web_bind else args.host
+
     # Initialize the database
-    print("[*] Initializing Database...")
+    print("[*] Initializing Database...", flush=True)
     db_manager.init_db()
 
     # Create processes for DNS server and Web app
-    dns_process = multiprocessing.Process(target=run_dns_server, args=(args.dns_bind, args.dns_port))
-    web_process = multiprocessing.Process(target=run_web_app, args=(args.web_bind, args.web_port))
+    dns_process = multiprocessing.Process(target=run_dns_server, args=(dns_bind_ip, args.dns_port))
+    web_process = multiprocessing.Process(target=run_web_app, args=(web_bind_ip, args.web_port))
 
     try:
         # Start both processes
