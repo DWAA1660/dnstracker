@@ -312,16 +312,24 @@
         async function fetchData() {
             const timeframe = document.getElementById('timeframe').value;
             const searchTerm = document.getElementById('query-search').value;
+            const deviceFilter = document.getElementById('device-filter').value;
             
             try {
                 // Fetch stats
-                const statsResponse = await fetch(`/api/stats?timeframe=${timeframe}`);
+                let statsUrl = `/api/stats?timeframe=${timeframe}`;
+                if (deviceFilter && deviceFilter !== 'all') {
+                    statsUrl += `&client_ip=${deviceFilter}`;
+                }
+                const statsResponse = await fetch(statsUrl);
                 const stats = await statsResponse.json();
                 
                 // Fetch recent queries
                 let queriesUrl = `/api/queries/recent?limit=20`;
                 if (searchTerm) {
                     queriesUrl += `&search=${encodeURIComponent(searchTerm)}`;
+                }
+                if (deviceFilter && deviceFilter !== 'all') {
+                    queriesUrl += `&client_ip=${deviceFilter}`;
                 }
                 const queriesResponse = await fetch(queriesUrl);
                 const queries = await queriesResponse.json();
@@ -340,7 +348,34 @@
             }
         }
 
+        function updateDeviceFilter(devices) {
+            const select = document.getElementById('device-filter');
+            const currentValue = select.value;
+            
+            // Save 'All Devices' option
+            const allOption = select.options[0];
+            select.innerHTML = '';
+            select.appendChild(allOption);
+            
+            devices.forEach(device => {
+                const option = document.createElement('option');
+                option.value = device.ip;
+                option.text = device.name || device.ip;
+                select.appendChild(option);
+            });
+            
+            // Restore selection if it still exists
+            if (currentValue && [...select.options].some(o => o.value === currentValue)) {
+                select.value = currentValue;
+            } else {
+                select.value = 'all';
+            }
+        }
+
         function updateDashboard(stats, queries, devices, blockedDomains) {
+            // Update Device Filter
+            updateDeviceFilter(devices);
+
             // Update summary cards
             document.getElementById('total-queries').innerText = stats.total_queries.toLocaleString();
             document.getElementById('active-devices').innerText = devices.length;
