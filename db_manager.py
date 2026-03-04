@@ -10,6 +10,8 @@ def get_connection():
     # Setting check_same_thread=False since we use a lock
     conn = sqlite3.connect(DB_PATH, check_same_thread=False)
     conn.row_factory = sqlite3.Row
+    # Enable WAL mode for better concurrency between processes
+    conn.execute('PRAGMA journal_mode=WAL;')
     return conn
 
 def init_db():

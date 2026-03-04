@@ -1,0 +1,14 @@
+[Unit]
+Description=DNS Tracker Service
+After=network.target
+
+[Service]
+Type=simple
+User=root
+WorkingDirectory=/opt/dnstracker
+ExecStart=/usr/bin/python3 main.py --dns-bind 170.205.30.132 --web-bind 127.0.0.1 --ssl-cert /etc/letsencrypt/live/privatedns.lunes.host/fullchain.pem --ssl-key /etc/letsencrypt/live/privatedns.lunes.host/privkey.pem
+Restart=always
+RestartSec=5
+
+[Install]
+WantedBy=multi-user.target
