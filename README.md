@@ -58,6 +58,21 @@ python main.py --dns-port 5353 --web-port 4000 --host 0.0.0.0
 - `--dns-bind`: IP for the DNS server to bind to (overrides --host).
 - `--web-port`: Port for the Web Dashboard (default: 4000).
 - `--web-bind`: IP for the Web Dashboard to bind to (overrides --host).
+- `--dot-port`: Port for DNS over TLS (DoT) (default: 853).
+- `--ssl-cert`: Path to SSL certificate file for DoT (required for DoT).
+- `--ssl-key`: Path to SSL private key file for DoT (required for DoT).
+
+## Private DNS (DNS over TLS)
+
+This tracker supports native DNS over TLS (DoT), allowing you to use it as a "Private DNS" provider on Android and other devices. This method is superior to using a proxy because it preserves the client's real IP address in the logs.
+
+To enable DoT, you must provide the paths to your SSL certificate and private key:
+
+```bash
+sudo python main.py --host 170.205.30.132 \
+  --ssl-cert /etc/letsencrypt/live/yourdomain.com/fullchain.pem \
+  --ssl-key /etc/letsencrypt/live/yourdomain.com/privkey.pem
+```
 
 ## Accessing the Dashboard
 

@@ -8,10 +8,13 @@ from dns_server import DNSProxy
 import db_manager
 from web_app import app
 
-def run_dns_server(bind, port):
+def run_dns_server(bind, port, dot_port, certfile, keyfile):
     print(f"[*] Starting DNS Server on {bind}:{port}", flush=True)
+    if certfile and keyfile:
+        print(f"[*] Starting DoT Server on {bind}:{dot_port}", flush=True)
+    
     try:
-        proxy = DNSProxy(port=port, bind=bind)
+        proxy = DNSProxy(port=port, bind=bind, dot_port=dot_port, certfile=certfile, keyfile=keyfile)
         proxy.start()
         while True:
             time.sleep(1)
@@ -23,7 +26,7 @@ def run_dns_server(bind, port):
             proxy.stop()
 
 def run_web_app(host, port):
-    print(f"[*] Starting Web Dashboard on http://{host}:{port}")
+    print(f"[*] Starting Web Dashboard on http://{host}:{port}", flush=True)
     # Disable reloader to prevent it from spawning multiple processes in the multiprocessing context
     app.run(host=host, port=port, use_reloader=False)
 
@@ -32,6 +35,9 @@ if __name__ == '__main__':
     parser.add_argument('--host', type=str, default='0.0.0.0', help='Global bind IP for both DNS and Web (default: 0.0.0.0)')
     parser.add_argument('--dns-port', type=int, default=53, help='Port for the DNS server to listen on (default: 53)')
     parser.add_argument('--dns-bind', type=str, default=None, help='IP for the DNS server to bind to (overrides --host)')
+    parser.add_argument('--dot-port', type=int, default=853, help='Port for DNS over TLS (default: 853)')
+    parser.add_argument('--ssl-cert', type=str, default=None, help='Path to SSL certificate file for DoT')
+    parser.add_argument('--ssl-key', type=str, default=None, help='Path to SSL key file for DoT')
     parser.add_argument('--web-port', type=int, default=4000, help='Port for the Web Dashboard (default: 4000)')
     parser.add_argument('--web-bind', type=str, default=None, help='IP for the Web Dashboard to bind to (overrides --host)')
     
@@ -46,7 +52,7 @@ if __name__ == '__main__':
     db_manager.init_db()
 
     # Create processes for DNS server and Web app
-    dns_process = multiprocessing.Process(target=run_dns_server, args=(dns_bind_ip, args.dns_port))
+    dns_process = multiprocessing.Process(target=run_dns_server, args=(dns_bind_ip, args.dns_port, args.dot_port, args.ssl_cert, args.ssl_key))
     web_process = multiprocessing.Process(target=run_web_app, args=(web_bind_ip, args.web_port))
 
     try:
