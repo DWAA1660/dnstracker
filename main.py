@@ -9,15 +9,18 @@ import db_manager
 from web_app import app
 
 def run_dns_server(bind, port):
-    print(f"[*] Starting DNS Server on {bind}:{port}")
-    proxy = DNSProxy(port=port, bind=bind)
-    proxy.start()
+    print(f"[*] Starting DNS Server on {bind}:{port}", flush=True)
     try:
+        proxy = DNSProxy(port=port, bind=bind)
+        proxy.start()
         while True:
             time.sleep(1)
+    except Exception as e:
+        print(f"[!] Error in DNS Server process: {e}", flush=True)
     except KeyboardInterrupt:
-        print("\n[*] Stopping DNS Server...")
-        proxy.stop()
+        print("\n[*] Stopping DNS Server...", flush=True)
+        if 'proxy' in locals():
+            proxy.stop(), flush=True
 
 def run_web_app(host, port):
     print(f"[*] Starting Web Dashboard on http://{host}:{port}")

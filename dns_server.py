@@ -20,15 +20,22 @@ class DNSProxy(threading.Thread):
         self.running = False
         
         # UDP socket for handling DNS requests
-        self.sock = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
-        self.sock.bind((self.bind, self.port))
+        try:
+            self.sock = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
+            self.sock.bind((self.bind, self.port))
+            print(f"[*] Socket successfully bound to {self.bind}:{self.port}", flush=True)
+        except Exception as e:
+            print(f"[!] Failed to bind to {self.bind}:{self.port}. Error: {e}", flush=True)
+            if self.port < 1024:
+                print("[!] Privileged ports (below 1024) require root/admin privileges.", flush=True)
+            raise e
         
         # Upstream socket
         self.upstream_sock = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
         self.upstream_sock.settimeout(5.0)
 
     def run(self):
-        print(f"[*] DNS Server listening on {self.bind}:{self.port}")
+        print(f"[*] DNS Server listening on {self.bind}:{self.port}", flush=True)
         self.running = True
         while self.running:
             try:
